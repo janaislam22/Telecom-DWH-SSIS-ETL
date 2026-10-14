@@ -103,7 +103,7 @@ flowchart LR
 
 ## 🔄 Control Flow
 
-The package orchestrates the run in four steps. Each step below shows its part of the SSIS canvas.
+The package orchestrates the run in three steps. Each step below shows its part of the SSIS canvas.
 
 ### ① · Generate the batch id
 
@@ -252,21 +252,22 @@ A reference dimension with **1,000 rows** mapping `imsi` to `subscriber_id`.
 ## 📁 Project Structure
 
 ```
-Telecom-ETL/
+telecom-dwh-ssis-etl/
 ├── 📄 README.md
-├── 📂 docs/
-│   └── 📂 images/
-│       ├── 01_control_flow.png     # Full control flow
-│       ├── 02_data_flow.png        # Full data flow
-│       └── cf_*.png, df_*.png      # Per-step crops used in this README
+├── 📄 Telecom ETL.sln              # Visual Studio solution
+├── 📂 Telecom ETL/                 # SSIS project
+│   ├── Load Data.dtsx              # Main package
+│   ├── Project.params
+│   ├── Telecom ETL.dtproj
+│   └── Telecom ETL.database
+├── 📂 Materials/                   # Dataset used by the package
+│   ├── 📂 Source Files/            # Input CSV files (read by the Foreach Loop)
+│   └── 📂 Processed Files/         # Archive folder for processed files
 ├── 📂 sql/
 │   ├── 01_Create_database.sql      # Database + fact & error tables
 │   └── 02_Create_dim_imsi.sql      # IMSI reference dimension + data
-└── 📂 Telecom ETL/                 # SSIS project (Visual Studio solution)
-    ├── Telecom ETL.sln
-    ├── Load Data.dtsx              # Main package
-    ├── Project.params
-    └── Telecom ETL.dtproj
+└── 📂 docs/
+    └── 📂 images/                  # Screenshots used in this README
 ```
 
 ---
@@ -289,16 +290,25 @@ sql/01_Create_database.sql
 sql/02_Create_dim_imsi.sql
 ```
 
-**2️⃣ Prepare the folders**
+**2️⃣ Prepare the dataset folders**
+
+Copy the dataset into the `Materials` folder of the repo, so it looks like this:
 
 ```
-📂 Source Files/       ← drop your .csv files here
-📂 Processed Files/    ← archive destination
+Materials/
+├── Source Files/       ← the input .csv files go here
+└── Processed Files/    ← processed files are archived here
 ```
 
-**3️⃣ Open the solution** `Telecom ETL/Telecom ETL.sln` in Visual Studio.
+**3️⃣ Open the solution** `Telecom ETL.sln` in Visual Studio.
 
-**4️⃣ Update the package variables** to match your machine: `ff_src_folder_path`, `ff_dest_archive` and `move_copy`.
+**4️⃣ Update the package variables** so they point to the `Materials` folder on your machine (use the full path of where you cloned the repo):
+
+| Variable | Value |
+|---|---|
+| `ff_src_folder_path` | `<repo path>\Materials\Source Files\` (keep the trailing `\`) |
+| `ff_dest_archive` | `<repo path>\Materials\Processed Files` |
+| `move_copy` | `move`, see [Notes](#-notes--known-limitations) |
 
 **5️⃣ Check the connection manager** `LocalHost.SSIS_Telecom_DB` (Data Source = `.`, Initial Catalog = `SSIS_Telecom_DB`).
 
@@ -336,7 +346,7 @@ The pipeline is designed so that **no row is silently dropped**:
 
 ## 📝 Notes & Known Limitations
 
-- 🔧 **Hard-coded paths:** the default variable values point to a local Windows folder. Update them for your environment.
+- 🔧 **Hard-coded paths:** the default variable values and the Flat File connection point to a local Windows folder. SSIS does not support relative paths here, so update `ff_src_folder_path` and `ff_dest_archive` to the location of `Materials` on your machine.
 - 🔧 **Copy/move switch:** the two precedence constraints test `@[User::move_copy] == "move"` and `@[User::move_copy] == "true"`. Make sure the variable value matches one of these so the intended File System Task runs.
 - 🔧 **Source file name on rejected records:** the case study asks for the original CSV file name to be stored with every rejected record. The current error tables do not have a dedicated `file_name` column (only `audit_id` on `err_source_output`), so this is a recommended enhancement: add a `file_name VARCHAR(255)` column to both error tables and populate it from `User::ff_src_file_name`.
 - 🔧 **`EVENT_TYPE` length:** the source defines it as 1 character, while the target column is `VARCHAR(50)`. This is more permissive than the spec.
