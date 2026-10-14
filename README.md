@@ -108,7 +108,7 @@ The package orchestrates the run in three steps. Each step below shows its part 
 ### ① · Generate the batch id
 
 <div align="center">
-  <img src="docs/images/cf_1_execute_sql.png" alt="Generate the batch id" width="300"/>
+  <img src="telecom-dwh-ssis-etl/telecom-dwh-ssis-etl/docs/images/cf_1_execute_sql.png" alt="Generate the batch id" width="300"/>
 </div>
 
 **Execute SQL Task** runs `SELECT MAX(batch_id) + 1 AS batch_id FROM dim_audit` to tag the current run. Only when it succeeds does the loop start.
@@ -116,7 +116,7 @@ The package orchestrates the run in three steps. Each step below shows its part 
 ### ② · Loop over the source files
 
 <div align="center">
-  <img src="docs/images/cf_2_foreach_dataflow.png" alt="Loop over the source files" width="520"/>
+  <img src="telecom-dwh-ssis-etl/telecom-dwh-ssis-etl/docs/images/cf_2_foreach_dataflow.png" alt="Loop over the source files" width="520"/>
 </div>
 
 **Foreach Loop Container** enumerates every `*.csv` file in the source folder (driven by `User::ff_src_folder_path`). For each file it sets `ff_src_file_name`, and an expression rebuilds `ff_src_full_Path` so the Flat File connection points to the current file.
@@ -126,7 +126,7 @@ Inside the loop, the **Data Flow Task** runs the full extract, transform and loa
 ### ③ · Archive the processed file
 
 <div align="center">
-  <img src="docs/images/cf_3_archive.png" alt="Archive the processed file" width="420"/>
+  <img src="telecom-dwh-ssis-etl/telecom-dwh-ssis-etl/docs/images/cf_3_archive.png" alt="Archive the processed file" width="420"/>
 </div>
 
 After the Data Flow succeeds, one of two **File System Tasks** runs, chosen by a **precedence constraint with an expression** on the `move_copy` variable:
@@ -147,7 +147,7 @@ The Data Flow Task runs once per file and moves each row through the stages belo
 ### ① · Read the file and catch bad lines
 
 <div align="center">
-  <img src="docs/images/df_1_source.png" alt="Read the file and catch bad lines" width="400"/>
+  <img src="telecom-dwh-ssis-etl/telecom-dwh-ssis-etl/docs/images/df_1_source.png" alt="Read the file and catch bad lines" width="400"/>
 </div>
 
 **FF SRC Read Transactions** (Flat File Source) reads the pipe-delimited (`|`) file with a header row. Columns: `id, imsi, imei, cell, lac, event_type, event_ts`.
@@ -157,7 +157,7 @@ Lines that cannot be parsed leave through the red **Flat File Source Error Outpu
 ### ② · Cleanse and enrich with the subscriber
 
 <div align="center">
-  <img src="docs/images/df_2_cleanse_lookup.png" alt="Cleanse and enrich with the subscriber" width="340"/>
+  <img src="telecom-dwh-ssis-etl/telecom-dwh-ssis-etl/docs/images/df_2_cleanse_lookup.png" alt="Cleanse and enrich with the subscriber" width="340"/>
 </div>
 
 - **Derived Column** cleanses the data: empty strings and invalid values become `NULL`, and columns are cast to the target types.
@@ -166,7 +166,7 @@ Lines that cannot be parsed leave through the red **Flat File Source Error Outpu
 ### ③ · Derive the business columns
 
 <div align="center">
-  <img src="docs/images/df_3_derive.png" alt="Derive the business columns" width="340"/>
+  <img src="telecom-dwh-ssis-etl/telecom-dwh-ssis-etl/docs/images/df_3_derive.png" alt="Derive the business columns" width="340"/>
 </div>
 
 - **DER Get Subscriber ID** replaces an unmatched (`NULL`) subscriber with the sentinel `-99999`.
@@ -175,7 +175,7 @@ Lines that cannot be parsed leave through the red **Flat File Source Error Outpu
 ### ④ · Load the fact table and capture rejects
 
 <div align="center">
-  <img src="docs/images/df_4_load_errors.png" alt="Load the fact table and capture rejects" width="380"/>
+  <img src="telecom-dwh-ssis-etl/telecom-dwh-ssis-etl/docs/images/df_4_load_errors.png" alt="Load the fact table and capture rejects" width="380"/>
 </div>
 
 - **OLEDB DEST Load Transactions** fast-loads clean rows into `dbo.fact_transaction` (`TABLOCK`, `CHECK_CONSTRAINTS`).
